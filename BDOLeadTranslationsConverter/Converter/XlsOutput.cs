@@ -5,6 +5,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using BDOLeadTranslationsConverter.Models;
+using NPOI.HSSF.UserModel;
+using NPOI.SS.UserModel;
 
 namespace BDOLeadTranslationsConverter.Converter
 {
@@ -16,22 +18,48 @@ namespace BDOLeadTranslationsConverter.Converter
 
         public override void Convert(List<TranslationModel> models)
         {
-            var contentStringBuilder = new StringBuilder();
-            foreach (var translationModel in models)
+            var languages = GetLanguages(models);
+
+            IWorkbook workbook = new HSSFWorkbook();
+
+            ISheet sheet1 = workbook.CreateSheet("Translations");
+            var headerRow = sheet1.CreateRow(0);
+            headerRow.CreateCell(0).SetCellValue("key");
+            for (var i = 0; i < languages.Count; i++)
             {
-                contentStringBuilder.AppendLine(translationModel.ToJson());
+                var language = languages[i];
+                headerRow.CreateCell(i + 1).SetCellValue(language);
             }
 
-            var json = Configuration.Configuration.JS_FILE_TEMPLATE.Replace(
-                Configuration.Configuration.JS_TRANSLATION_REPLACEMENT_TAG, contentStringBuilder.ToString());
-
-            var jsonFileName = Path.ChangeExtension(FileInfo.FullName, ".js");
-
-            if (File.Exists(jsonFileName))
+            for (int i = 0; i < models.Count; i++)
             {
-                File.Delete(jsonFileName);
+                var model = models[i];
+
+                var row = sheet1.CreateRow(i + 1);
+                row.CreateCell(0).SetCellValue(model.key);
+
+                for (int j = 0; j < languages.Count; j++)
+                {
+                    var language = languages[j];
+                    if (model.Translations.ContainsKey(language))
+                    {
+                        row.CreateCell(j + 1).SetCellValue(model.Translations[language]);
+                    }
+                }
             }
-            File.WriteAllText(jsonFileName, json);
+
+            var exportFileName = Path.ChangeExtension(FileInfo.FullName, ".xls");
+
+            if (File.Exists(exportFileName))
+            {
+                File.Delete(exportFileName);
+            }
+
+            FileStream sw = File.Create(exportFileName);
+
+            workbook.Write(sw);
+
+            sw.Close();
         }
     }
 }

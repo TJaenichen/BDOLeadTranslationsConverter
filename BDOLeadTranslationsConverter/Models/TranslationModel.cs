@@ -15,19 +15,5 @@ namespace BDOLeadTranslationsConverter.Models
         {
             Translations = new Dictionary<string, string>();
         }
-
-        public string ToJson()
-        {
-            var stringBuilder = new StringBuilder();
-            stringBuilder.AppendLine("{");
-            stringBuilder.AppendLine($"\"key\":  \"{key}\",");
-            foreach (var translation in Translations)
-            {
-                stringBuilder.AppendLine($"\"{translation.Key}\":    \"{translation.Value.Replace("\"", "\\\"")}\",");
-            }
-
-            stringBuilder.AppendLine("},");
-            return stringBuilder.ToString();
-        }
     }
 }
