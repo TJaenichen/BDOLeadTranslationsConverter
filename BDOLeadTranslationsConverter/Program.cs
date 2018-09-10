@@ -16,85 +16,96 @@ namespace BDOLeadTranslationsConverter
         enum InputType { js, xls, resx, none}
         static void Main(string[] args)
         {
-            if (args.Length == 0)
+            try
             {
-                return;
-            }
-            
-            List<InputBase> inputs = new List<InputBase>();
+                if (args.Length == 0)
+                {
+                    return;
+                }
 
-            for (int i = 0; i < args.Length; i++)
+                List<InputBase> inputs = new List<InputBase>();
+
+                for (int i = 0; i < args.Length; i++)
+                {
+
+                    var filename = args[i];
+
+                    var fileInfo = new FileInfo(filename);
+                    var type = GetInputType(fileInfo);
+                    Console.WriteLine($"Converting {fileInfo.FullName}");
+                    if (!File.Exists(filename) || type == InputType.none)
+                    {
+                        Console.WriteLine("No idea what to do with {0}... skipping", fileInfo.Name);
+                        continue;
+                    }
+
+                    if (!CheckKillExcel(fileInfo))
+                    {
+                        Console.WriteLine("Can't convert with file open in Excel");
+                        continue;
+                    }
+
+                    InputBase input = null;
+                    switch (type)
+                    {
+                        case InputType.js:
+                            input = new JsInput(fileInfo);
+                            break;
+                        case InputType.xls:
+                            input = new XlsInput(fileInfo);
+                            break;
+                        case InputType.resx:
+                            input = new ResxInput(fileInfo);
+                            break;
+                        case InputType.none:
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException();
+                    }
+
+                    // Shouldn't happen but lets keep re-sharper happy
+                    if (input == null)
+                    {
+                        Console.WriteLine("No idea what to do with {0}... skipping", fileInfo.Name);
+                        continue;
+                    }
+
+                    inputs.Add(input);
+                    var models = input.GetModels();
+                    if (models.Count == 0)
+                    {
+                        continue;
+                    }
+
+                    switch (type)
+                    {
+                        case InputType.js:
+                            new XlsOutput(fileInfo).Convert(models);
+                            //new ResxOutput(fileInfo).Convert(models);
+                            break;
+                        case InputType.xls:
+                            //new JsOutput(fileInfo).Convert(models);
+                            //new ResxOutput(fileInfo).Convert(models);
+                            break;
+                        case InputType.resx:
+                            new XlsOutput(fileInfo).Convert(models);
+                            //new JsOutput(fileInfo).Convert(models);
+                            break;
+                        case InputType.none:
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException();
+                    }
+                }
+
+                Console.WriteLine("Done");
+                Console.ReadKey();
+            }
+            catch (Exception ex)
             {
-                
-                var filename = args[i];
-                
-                var fileInfo = new FileInfo(filename);
-                var type = GetInputType(fileInfo);
-                Console.WriteLine($"Converting {fileInfo.Name}");
-                if (!File.Exists(filename) || type == InputType.none)
-                {
-                    Console.WriteLine("No idea what to do with {0}... skipping", fileInfo.Name);
-                    continue;
-                }
-
-                if (!CheckKillExcel(fileInfo))
-                {
-                    Console.WriteLine("Can't convert with file open in Excel");
-                    continue;
-                }
-
-                InputBase input = null;
-                switch (type)
-                {
-                    case InputType.js:
-                        input = new JsInput(fileInfo);
-                        break;
-                    case InputType.xls:
-                        input = new XlsInput(fileInfo);
-                        break;
-                    case InputType.resx:
-                        input = new ResxInput(fileInfo);
-                        break;
-                    case InputType.none:
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException();
-                }
-                
-                // Shouldn't happen but lets keep re-sharper happy
-                if (input == null)
-                {
-                    Console.WriteLine("No idea what to do with {0}... skipping", fileInfo.Name);
-                    continue;
-                }
-                inputs.Add(input);
-                var models = input.GetModels();
-                if (models.Count == 0)
-                {
-                    continue;
-                }
-                switch (type)
-                {
-                    case InputType.js:
-                        new XlsOutput(fileInfo).Convert(models);
-                        new ResxOutput(fileInfo).Convert(models);
-                        break;
-                    case InputType.xls:
-                        new JsOutput(fileInfo).Convert(models);
-                        new ResxOutput(fileInfo).Convert(models);
-                        break;
-                    case InputType.resx:
-                        new XlsOutput(fileInfo).Convert(models);
-                        new JsOutput(fileInfo).Convert(models);
-                        break;
-                    case InputType.none:
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException();
-                }
+                Console.Write(ex.ToString());
+                Console.ReadKey();
             }
-            Console.WriteLine("Done");
-            Console.ReadKey();
         }
 
         private static InputType GetInputType(FileInfo fileInfo)

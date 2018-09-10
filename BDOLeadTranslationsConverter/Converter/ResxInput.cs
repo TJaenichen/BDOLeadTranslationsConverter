@@ -62,7 +62,18 @@ namespace BDOLeadTranslationsConverter.Converter
                     }
                     else
                     {
-                        existing.Translations.Add(language, translation.Value);
+                        if (existing.Translations.ContainsKey(language))
+                        {
+                            Console.WriteLine(language);
+                            Console.WriteLine(translation.Name);
+                            Console.WriteLine(translation.Value);
+                            throw new Exception("Key already exists");
+                        }
+                        else
+                        {
+                            existing.Translations.Add(language, translation.Value);
+                        }
+                        
                     }
                 }
             }
@@ -72,7 +83,8 @@ namespace BDOLeadTranslationsConverter.Converter
 
         private string GetLanguageFromResx(string translationFile)
         {
-            var parts = translationFile.Split('.');
+            var fileInfo = new FileInfo(translationFile);
+            var parts = fileInfo.Name.Split('.');
             if (parts.Length == 2)
             {
                 return Configuration.Configuration.RESX_DEFAULT_LANGUAGE;

@@ -23,16 +23,29 @@ namespace BDOLeadTranslationsConverter.Converter
                 var line = streamReader.ReadLine();
                 while (!string.IsNullOrEmpty(line))
                 {
-                    if (line.Contains(Configuration.Configuration.JS_START_TOKEN))
+                    var found = false;
+                    foreach (var startToken in Configuration.Configuration.JS_START_TOKEN)
+                    {
+                        if (line.Contains(startToken))
+                        {
+                            found = true;
+                            break;
+                        }
+                    }
+
+                    if (found)
                     {
                         break;
                     }
-
                     line = streamReader.ReadLine();
                 }
 
                 var content = streamReader.ReadToEnd();
-                content = content.Replace(Configuration.Configuration.JS_START_TOKEN, "");
+                foreach (var startToken in Configuration.Configuration.JS_START_TOKEN)
+                {
+                    content = content.Replace(startToken, "");
+                }
+                
                 content = content.Trim();
                 if (content.Length < 2)
                 {
